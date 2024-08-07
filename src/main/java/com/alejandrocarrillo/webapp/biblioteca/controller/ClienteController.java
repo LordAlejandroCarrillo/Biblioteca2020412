@@ -7,10 +7,13 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alejandrocarrillo.webapp.biblioteca.model.Cliente;
@@ -18,17 +21,27 @@ import com.alejandrocarrillo.webapp.biblioteca.service.ClienteService;
 
 @Controller
 @RestController
-@RequestMapping("cliente")
+@RequestMapping("")
 public class ClienteController {
     @Autowired
     ClienteService clienteService;
 
-    @GetMapping("/")
+    @GetMapping("/clientes")
     public List<Cliente> listarCliente(){
         return clienteService.listarCliente();
     }
 
-    @PostMapping("/")
+    @GetMapping("/cliente")
+    public ResponseEntity<Cliente> buscarClientePorId(@RequestParam Long id){
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(id);
+            return ResponseEntity.ok(cliente);    
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PostMapping("/cliente")
     public ResponseEntity<Map<String, String>> agregarCliente(@RequestBody Cliente cliente){
         Map<String, String> response = new HashMap<>();
         try {
@@ -38,6 +51,39 @@ public class ClienteController {
         } catch (Exception e) {
             response.put("message", "error");
             response.put("err", "Hubo un error al crear el cliente");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PutMapping("/cliente")
+    public ResponseEntity<Map<String,String>> editarCliente(@RequestParam Long id, @RequestBody Cliente clienteNuevo){
+        Map<String, String> response = new HashMap<>();
+        try {
+            Cliente clienteViejo = clienteService.buscarClientePorId(id);
+            clienteViejo.setNombreCliente(clienteNuevo.getNombreCliente());
+            clienteViejo.setApellidoCliente(clienteNuevo.getApellidoCliente());
+            clienteViejo.setTelefonoCliente(clienteNuevo.getTelefonoCliente());
+            clienteService.guardarCliente(clienteViejo);
+            response.put("message", "La categoria se ha modificado on exito");
+        return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "Error");
+            response.put("err", "Hubo un error al intentar modificar el cliente");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @DeleteMapping("/cliente")
+    public ResponseEntity<Map<String, String>> eliminarCliente(@RequestParam Long id){
+        Map<String, String> response = new HashMap<>();
+        try {
+            Cliente cliente = clienteService.buscarClientePorId(id);
+            clienteService.eliminarCliente(cliente);
+            response.put("message","El cliente se ha eliminado con exito");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "error");
+            response.put("err", "El cliente no se ha eliminado con exito");
             return ResponseEntity.badRequest().body(response);
         }
     }
